@@ -34,6 +34,22 @@ jobs:
     - name: Parse JTL file and prepare email content
       id: parse-results
       run: |
+                # Convert the data to a table for easier processing
+        echo "$data" > results.csv
+        df=$(python3 -c "
+import pandas as pd
+df = pd.read_csv('results.csv')
+df['MainTransaction'] = df['PageName'].str.split('-').str[0]
+result = df.groupby('MainTransaction').agg({
+    'Response Time': 'max',
+    'Status': lambda x: 'Fail' if 'Fail' in x.values else 'Pass'
+}).reset_index()
+result.rename(columns={'MainTransaction': 'PageName'}, inplace=True)
+result['Response Time'] = result['Response Time'].apply(lambda x: f'{x:.2f} sec')
+result.to_csv('/tmp/final_results.csv', index=False)
+")
+
+        cat /tmp/final_results.csv
         parsed_results="<table style='border-collapse: collapse; width: auto; max-width: 700px; margin: auto;'><tr style='background-color: yellow;'><th style='border: 1px solid black; padding: 8px; text-align: left;'>PageName</th><th style='border: 1px solid black; padding: 8px;'>Response Time</th><th style='border: 1px solid black; padding: 8px;'>Status</th></tr>"
         overall_status="Successful"
         failed_labels=""
