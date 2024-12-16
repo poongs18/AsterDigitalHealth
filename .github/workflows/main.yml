@@ -90,11 +90,29 @@ EOF
         username: ${{ secrets.USERNAME }}
         password: ${{ secrets.PASSWORD }}
         subject: "Aster- Real Time Monitoring - #${{ env.run_number }} - ${{ env.run_date }} & ${{ env.run_time }} - Health Status - ${{ env.overall_status }}!"
-        html_body: |
+        html_body: >
           <html>
           <body style="font-family: Calibri, sans-serif;">
             <div style='float: left; margin-right: 20px;'> <!-- Align table to left -->
               <p>Please find the details of Application responsiveness:</p>
               <p>${{ env.parsed_results }}</p>
             </div>
-            <div style='clear: both;'></di
+            <div style='clear: both;'></div> <!-- Clear float -->
+            <p></p> <!-- Add space between table and build information -->
+            
+            <p><b>Build Information:</b></p>
+            <p>Build Health Status: ${{ env.overall_status }}!<br>
+            Build Date and Time: ${{ env.run_date }} & ${{ env.run_time }}</p>
+            
+            <p><b>Summary:</b></p>
+            <p>${{ env.summary }}</p>
+
+            <p>Thanks,<br>
+            QA Team.</p>
+
+            <p>Note: This is an auto-generated email. Do not reply</p>
+          </body>
+          </html>
+        to: jenkins@thinktime.in
+        from: ${{ secrets.USERNAME }}
+        priority: normal
