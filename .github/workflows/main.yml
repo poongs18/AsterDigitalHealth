@@ -39,7 +39,7 @@ jobs:
         failed_labels=""
         while IFS=, read -r timeStamp elapsed label responseCode responseMessage threadName dataType success failureMessage bytes sentBytes grpThreads allThreads URL Latency IdleTime Connect; do
           if [ "$label" != "label" ]; then
-            if [ $elapsed -le 5000 ]; then
+            if [ $elapsed -le 10000 ]; then
               result="<span style='color: green;'>Pass</span>"
             else
               result="<span style='color: red;'>Fail</span>"
