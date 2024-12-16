@@ -36,21 +36,22 @@ jobs:
       run: |
         # Define the transactions to focus on
     target_labels=("01_Launch" "02_About Us" "03_Global_Network" "04_Excellence" "05_Innovation" "06_Investors" "07_Media_Center" "08_Careers" "09_Contact Us")
-        parsed_results="<table style='border-collapse: collapse; width: auto; max-width: 700px; margin: auto;'><tr style='background-color: yellow;'><th style='border: 1px solid black; padding: 8px; text-align: left;'>PageName</th><th style='border: 1px solid black; padding: 8px;'>Response Time</th><th style='border: 1px solid black; padding: 8px;'>Status</th></tr>"
+    parsed_results="<table style='border-collapse: collapse; width: auto; max-width: 700px; margin: auto;'><tr style='background-color: yellow;'><th style='border: 1px solid black; padding: 8px; text-align: left;'>PageName</th><th style='border: 1px solid black; padding: 8px;'>Response Time</th><th style='border: 1px solid black; padding: 8px;'>Status</th></tr>"
         overall_status="Successful"
         failed_labels=""
-        while IFS=, read -r PageName ResponseTime Status; do
-          if [ "$PageName" != "PageName" ]; then
-            if [ $(echo "$ResponseTime < 10" | bc) -eq 1 ]; then
+        while IFS=, read -r timeStamp elapsed label responseCode responseMessage threadName dataType success failureMessage bytes sentBytes grpThreads allThreads URL Latency IdleTime Connect; do
+          if [ "$label" != "label" ]; then
+            if [ $elapsed -le 10000 ]; then
               result="<span style='color: green;'>Pass</span>"
             else
               result="<span style='color: red;'>Fail</span>"
               overall_status="Failure"
-              failed_labels="$failed_labels$PageName, "
+              failed_labels="$failed_labels$label, "
             fi
-            parsed_results="$parsed_results<tr><td style='border: 1px solid black; padding: 8px; text-align: left;'>$PageName</td><td style='border: 1px solid black; padding: 8px;'>$ResponseTime</td><td style='border: 1px solid black; padding: 8px;'>$result</td></tr>"
+            response_time=$(printf "%.2f" $(bc <<< "scale=2; $elapsed / 1000"))
+            parsed_results="$parsed_results<tr><td style='border: 1px solid black; padding: 8px; text-align: left;'>$label</td><td style='border: 1px solid black; padding: 8px;'>${response_time} sec</td><td style='border: 1px solid black; padding: 8px;'>$result</td></tr>"
           fi
-        done < /tmp/final_results.csv
+        done < Asterresults.jtl
         # Remove trailing comma from failed_labels
         failed_labels="${failed_labels%,*}"
         parsed_results="$parsed_results</table>"
@@ -58,7 +59,7 @@ jobs:
         if [ "$overall_status" = "Successful" ]; then
           summary="All transactions met the response time SLA of 10 seconds, indicating optimal performance."
         else
-          summary="Please note that the following transactions failed to meet the performance criteria with a response time above 10 seconds: $failed_labels. Immediate action is required to address the performance issues identified."
+          summary="Please note that the following transactions failed to meet the performance criteria with a response time of 5 seconds: $failed_labels. Immediate action is required to address the performance issues identified."
         fi
 
         echo "parsed_results<<EOF" >> $GITHUB_ENV
@@ -76,7 +77,7 @@ jobs:
         username: ${{ secrets.USERNAME }}
         password: ${{ secrets.PASSWORD }}
         subject: "Aster- Real Time Monitoring - #${{ env.run_number }} - ${{ env.run_date }} & ${{ env.run_time }} - Health Status - ${{ env.overall_status }}!"
-        html_body: >
+        html_body: |
           <html>
           <body style="font-family: Calibri, sans-serif;">
             <div style='float: left; margin-right: 20px;'> <!-- Align table to left -->
