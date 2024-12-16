@@ -2,8 +2,9 @@ name: Run Aster Script and Send Results
 
 on:
   schedule:
-  - cron: '30 4 * * *'  # Runs at 10 AM IST (UTC+5:30)
-  
+    - cron: '30 4 * * *'  # Runs at 10 AM IST (UTC+5:30)
+  workflow_dispatch:  # Allows manual triggering of the workflow
+
 jobs:
   run-jmeter:
     runs-on: ubuntu-latest
