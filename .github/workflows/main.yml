@@ -35,37 +35,36 @@ jobs:
       id: parse-results
       run: |
         # Convert the data to a table for easier processing
-        echo "$data" > results.csv
-        python3 -c "
+        python3 - <<'EOF'
 import pandas as pd
-df = pd.read_csv('results.csv')
-df['MainTransaction'] = df['PageName'].str.split('-').str[0]
+
+df = pd.read_csv('Asterresults.jtl')
+df['MainTransaction'] = df['label'].str.split('-').str[0]
 result = df.groupby('MainTransaction').agg({
-    'Response Time': 'max',
-    'Status': lambda x: 'Fail' if 'Fail' in x.values else 'Pass'
+    'elapsed': 'max',
+    'success': lambda x: 'Fail' if 'false' in x.values else 'Pass'
 }).reset_index()
 result.rename(columns={'MainTransaction': 'PageName'}, inplace=True)
-result['Response Time'] = result['Response Time'].apply(lambda x: f'{x:.2f} sec')
+result['elapsed'] = result['elapsed'].apply(lambda x: f'{x / 1000:.2f} sec')
 result.to_csv('/tmp/final_results.csv', index=False)
-"
+EOF
         
         cat /tmp/final_results.csv
         parsed_results="<table style='border-collapse: collapse; width: auto; max-width: 700px; margin: auto;'><tr style='background-color: yellow;'><th style='border: 1px solid black; padding: 8px; text-align: left;'>PageName</th><th style='border: 1px solid black; padding: 8px;'>Response Time</th><th style='border: 1px solid black; padding: 8px;'>Status</th></tr>"
         overall_status="Successful"
         failed_labels=""
-        while IFS=, read -r timeStamp elapsed label responseCode responseMessage threadName dataType success failureMessage bytes sentBytes grpThreads allThreads URL Latency IdleTime Connect; do
-          if [ "$label" != "label" ]; then
-            if [ $elapsed -le 10000 ]; then
+        while IFS=, read -r PageName ResponseTime Status; do
+          if [ "$PageName" != "PageName" ]; then
+            if [ $(echo "$ResponseTime < 10" | bc) -eq 1 ]; then
               result="<span style='color: green;'>Pass</span>"
             else
               result="<span style='color: red;'>Fail</span>"
               overall_status="Failure"
-              failed_labels="$failed_labels$label, "
+              failed_labels="$failed_labels$PageName, "
             fi
-            response_time=$(printf "%.2f" $(bc <<< "scale=2; $elapsed / 1000"))
-            parsed_results="$parsed_results<tr><td style='border: 1px solid black; padding: 8px; text-align: left;'>$label</td><td style='border: 1px solid black; padding: 8px;'>${response_time} sec</td><td style='border: 1px solid black; padding: 8px;'>$result</td></tr>"
+            parsed_results="$parsed_results<tr><td style='border: 1px solid black; padding: 8px; text-align: left;'>$PageName</td><td style='border: 1px solid black; padding: 8px;'>$ResponseTime</td><td style='border: 1px solid black; padding: 8px;'>$result</td></tr>"
           fi
-        done < Asterresults.jtl
+        done < /tmp/final_results.csv
         # Remove trailing comma from failed_labels
         failed_labels="${failed_labels%,*}"
         parsed_results="$parsed_results</table>"
@@ -73,7 +72,7 @@ result.to_csv('/tmp/final_results.csv', index=False)
         if [ "$overall_status" = "Successful" ]; then
           summary="All transactions met the response time SLA of 10 seconds, indicating optimal performance."
         else
-          summary="Please note that the following transactions failed to meet the performance criteria with a response time of 5 seconds: $failed_labels. Immediate action is required to address the performance issues identified."
+          summary="Please note that the following transactions failed to meet the performance criteria with a response time above 10 seconds: $failed_labels. Immediate action is required to address the performance issues identified."
         fi
 
         echo "parsed_results<<EOF" >> $GITHUB_ENV
