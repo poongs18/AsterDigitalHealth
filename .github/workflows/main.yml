@@ -36,7 +36,7 @@ jobs:
       run: |
         # Convert the data to a table for easier processing
         echo "$data" > results.csv
-        df=$(python3 -c "
+        python3 -c "
 import pandas as pd
 df = pd.read_csv('results.csv')
 df['MainTransaction'] = df['PageName'].str.split('-').str[0]
@@ -47,8 +47,8 @@ result = df.groupby('MainTransaction').agg({
 result.rename(columns={'MainTransaction': 'PageName'}, inplace=True)
 result['Response Time'] = result['Response Time'].apply(lambda x: f'{x:.2f} sec')
 result.to_csv('/tmp/final_results.csv', index=False)
-")
-
+"
+        
         cat /tmp/final_results.csv
         parsed_results="<table style='border-collapse: collapse; width: auto; max-width: 700px; margin: auto;'><tr style='background-color: yellow;'><th style='border: 1px solid black; padding: 8px; text-align: left;'>PageName</th><th style='border: 1px solid black; padding: 8px;'>Response Time</th><th style='border: 1px solid black; padding: 8px;'>Status</th></tr>"
         overall_status="Successful"
@@ -76,7 +76,9 @@ result.to_csv('/tmp/final_results.csv', index=False)
           summary="Please note that the following transactions failed to meet the performance criteria with a response time of 5 seconds: $failed_labels. Immediate action is required to address the performance issues identified."
         fi
 
-        echo "parsed_results=$parsed_results" >> $GITHUB_ENV
+        echo "parsed_results<<EOF" >> $GITHUB_ENV
+        echo "$parsed_results" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
         echo "overall_status=$overall_status" >> $GITHUB_ENV
         echo "failed_labels=$failed_labels" >> $GITHUB_ENV
         echo "summary=$summary" >> $GITHUB_ENV
