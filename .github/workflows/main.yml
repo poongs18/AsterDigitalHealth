@@ -2,7 +2,7 @@ name: Run Aster Script and Send Results
 
 on:
   schedule:
-    - cron: '30 4 * * *'  # Runs at 10 AM IST (UTC+5:30)
+    - cron: '30 4 1 * *'  # Runs at 10 AM IST (UTC+5:30) on the first day of every month
   workflow_dispatch:  # Allows manual triggering of the workflow
 
 jobs:
